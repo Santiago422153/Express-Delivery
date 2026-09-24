@@ -1,0 +1,12 @@
+[
+    {
+        "id_pedido": "ENV-2476",
+        "cliente": "DUglita",
+        "destino": "Av.Libertador ZOna Indrustrial 1 calle 16",
+        "peso_kg": 100.0,
+        "precio_usd": 1000.0,
+        "distancia_km": 23.0,
+        "prioridad": 556.87,
+        "timestamp": 1790291083.340685
+    }
+]
