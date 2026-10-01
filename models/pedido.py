@@ -2,15 +2,18 @@ import math
 import time
 
 class Pedido:
-    def __init__(self, id_pedido, cliente, producto, destino, peso_kg, precio_usd, distancia_km, imagen_url=""):
+    def __init__(self, id_pedido, cliente, producto, destino, peso_kg, precio_usd, distancia_km, imagen_url="", telefono="", descripcion="", items=None):
         self.id_pedido = id_pedido
         self.cliente = cliente
-        self.producto = producto
+        self.producto = producto  # Descripción textual o resumen de productos
         self.destino = destino
         self.peso_kg = float(peso_kg)
         self.precio_usd = float(precio_usd)
         self.distancia_km = float(distancia_km)
         self.imagen_url = imagen_url
+        self.telefono = telefono
+        self.descripcion = descripcion
+        self.items = items if items else []  # Lista de dicts: [{"nombre": str, "cantidad": int, "precio_unit": float, "peso_unit": float}]
         self.timestamp = time.time()
         self.prioridad = self.calcular_prioridad()
 
@@ -30,6 +33,9 @@ class Pedido:
             "precio_usd": self.precio_usd,
             "distancia_km": self.distancia_km,
             "imagen_url": self.imagen_url,
+            "telefono": self.telefono,
+            "descripcion": self.descripcion,
+            "items": self.items,
             "prioridad": self.prioridad,
             "timestamp": self.timestamp
         }
@@ -44,7 +50,10 @@ class Pedido:
             peso_kg=data["peso_kg"],
             precio_usd=data["precio_usd"],
             distancia_km=data["distancia_km"],
-            imagen_url=data.get("imagen_url", "")
+            imagen_url=data.get("imagen_url", ""),
+            telefono=data.get("telefono", ""),
+            descripcion=data.get("descripcion", ""),
+            items=data.get("items", [])
         )
         pedido.prioridad = data.get("prioridad", pedido.calcular_prioridad())
         pedido.timestamp = data.get("timestamp", time.time())

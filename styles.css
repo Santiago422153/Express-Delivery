@@ -48,6 +48,24 @@ QLineEdit:focus, QComboBox:focus, QDoubleSpinBox:focus {
     border: 1px solid #3498db;
 }
 
+/* Solución definitiva para el desplegable (QComboBox) y la lista de opciones */
+QComboBox {
+    color: #ffffff;
+    background-color: #24303f;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #1a232e;
+    color: #ffffff;
+    selection-background-color: #2980b9;
+    selection-color: #ffffff;
+    border: 1px solid #36475b;
+}
+
+QComboBox::drop-down {
+    border: 0px;
+}
+
 QPushButton {
     background-color: #2980b9;
     color: white;
@@ -88,4 +106,26 @@ QPushButton#btnAuto:hover {
 
 QDialog {
     background-color: #12181f;
+}
+
+QTextEdit {
+    background-color: #24303f;
+    color: #ffffff;
+    border: 1px solid #36475b;
+    border-radius: 4px;
+    padding: 6px;
+}
+
+QSpinBox {
+    background-color: #24303f;
+    color: #ffffff;
+    border: 1px solid #36475b;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+QTableWidget QSpinBox {
+    background-color: #1a232e;
+    color: #ffffff;
+    border: 1px solid #36475b;
 }
