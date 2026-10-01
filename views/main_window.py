@@ -1,7 +1,9 @@
 import math
+import urllib.parse
+import webbrowser
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTableWidget, QTableWidgetItem, QLabel, 
-                             QHeaderView, QMessageBox, QFrame)
+                             QHeaderView, QMessageBox, QFrame, QMenu, QAction)
 from PyQt5.QtCore import Qt, QTimer
 from controllers.data_manager import DataManager
 from controllers.bcv_service import BCVService
@@ -13,7 +15,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Gestor de Envíos Express (Modo Oscuro) - Tienda Online")
-        self.resize(1050, 650)
+        self.resize(1200, 680)
         
         self.data_manager = DataManager()
         self.tasa_bcv = BCVService.obtener_tasa_dolar()
@@ -55,15 +57,17 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(top_card)
 
-        # Tabla Principal
+        # Tabla Principal (10 columnas: ID, Cliente, Teléfono, Producto, Destino, Peso, Precio USD, Precio VES, Descripción, Prioridad)
         self.table = QTableWidget()
-        self.table.setColumnCount(8)
+        self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels([
-            "ID", "Cliente", "Producto", "Destino", "Peso", "Precio ($)", "Precio (VES)", "Prioridad"
+            "ID", "Cliente", "Teléfono", "Producto", "Destino", "Peso", "Precio ($)", "Precio (VES)", "Descripción", "Prioridad"
         ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.mostrar_menu_contextual)
         
         main_layout.addWidget(self.table)
 
@@ -87,11 +91,31 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(btn_layout)
 
+    def mostrar_menu_contextual(self, pos):
+        row = self.table.rowAt(pos.y())
+        if row < 0:
+            return
+        
+        menu = QMenu(self)
+        menu.setStyleSheet("background-color: #1a232e; color: white; border: 1px solid #36475b;")
+        
+        accion_maps = QAction("🗺️ Ver ubicación en Google Maps", self)
+        accion_maps.triggered.connect(lambda: self.abrir_maps_fila(row))
+        menu.addAction(accion_maps)
+        
+        menu.exec_(self.table.viewport().mapToGlobal(pos))
+
+    def abrir_maps_fila(self, row):
+        pedido = self.pedidos[row]
+        destino = pedido.destino
+        if destino:
+            url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(destino)}"
+            webbrowser.open(url)
+
     def toggle_automatizacion(self, checked):
         if checked:
             self.btn_auto.setText("⏸️ Detener Automatización")
             self.btn_auto.setStyleSheet("background-color: #e67e22; color: white;")
-            # Genera un pedido cada 5 segundos
             self.timer_auto.start(5000)
         else:
             self.btn_auto.setText("⚡ Activar Automatización")
@@ -122,15 +146,17 @@ class MainWindow(QMainWindow):
 
             self.table.setItem(row, 0, QTableWidgetItem(p.id_pedido))
             self.table.setItem(row, 1, QTableWidgetItem(p.cliente))
-            self.table.setItem(row, 2, QTableWidgetItem(p.producto))
-            self.table.setItem(row, 3, QTableWidgetItem(p.destino))
-            self.table.setItem(row, 4, QTableWidgetItem(f"{p.peso_kg:.2f} kg"))
-            self.table.setItem(row, 5, QTableWidgetItem(f"$ {p.precio_usd:.2f}"))
-            self.table.setItem(row, 6, QTableWidgetItem(f"Bs. {precio_ves:,.2f}"))
+            self.table.setItem(row, 2, QTableWidgetItem(getattr(p, "telefono", "-")))
+            self.table.setItem(row, 3, QTableWidgetItem(p.producto))
+            self.table.setItem(row, 4, QTableWidgetItem(p.destino))
+            self.table.setItem(row, 5, QTableWidgetItem(f"{p.peso_kg:.2f} kg"))
+            self.table.setItem(row, 6, QTableWidgetItem(f"$ {p.precio_usd:.2f}"))
+            self.table.setItem(row, 7, QTableWidgetItem(f"Bs. {precio_ves:,.2f}"))
+            self.table.setItem(row, 8, QTableWidgetItem(getattr(p, "descripcion", "")))
             
             item_prioridad = QTableWidgetItem(f"{p.prioridad:.2f}")
             item_prioridad.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 7, item_prioridad)
+            self.table.setItem(row, 9, item_prioridad)
 
     def crear_pedido(self):
         dialog = PedidoDialog(self)
@@ -152,12 +178,14 @@ class MainWindow(QMainWindow):
         if dialog.exec_():
             data = dialog.get_data()
             pedido_actual.cliente = data["cliente"]
+            pedido_actual.telefono = data["telefono"]
             pedido_actual.producto = data["producto"]
             pedido_actual.destino = data["destino"]
             pedido_actual.peso_kg = data["peso_kg"]
             pedido_actual.precio_usd = data["precio_usd"]
             pedido_actual.distancia_km = data["distancia_km"]
             pedido_actual.imagen_url = data["imagen_url"]
+            pedido_actual.descripcion = data["descripcion"]
             pedido_actual.prioridad = pedido_actual.calcular_prioridad()
 
             self.data_manager.guardar_pedidos(self.pedidos)
